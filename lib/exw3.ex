@@ -983,14 +983,14 @@ defmodule ExW3 do
       response =
         tx_hash
         |> ExW3.tx_receipt()
-        |> evaluate_recepit(contract_info)
+        |> evaluate_receipt(contract_info)
 
       {:reply, response, state}
     end
 
-    defp evaluate_recepit({:error, :not_mined}, _info), do: {:error, :not_mined}
+    defp evaluate_receipt({:error, :not_mined}, _info), do: {:error, :not_mined}
 
-    defp evaluate_recepit({:ok, receipt}, contract_info) do
+    defp evaluate_receipt({:ok, receipt}, contract_info) do
       events = contract_info[:events]
       logs = receipt["logs"]
 
