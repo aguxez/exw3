@@ -980,8 +980,17 @@ defmodule ExW3 do
     def handle_call({:tx_receipt, {contract_name, tx_hash}}, _from, state) do
       contract_info = state[contract_name]
 
-      {:ok, receipt} = ExW3.tx_receipt(tx_hash)
+      response =
+        tx_hash
+        |> ExW3.tx_receipt()
+        |> evaluate_recepit(contract_info)
 
+      {:reply, response, state}
+    end
+
+    defp evaluate_recepit({:error, :not_mined}, _info), do: {:error, :not_mined}
+
+    defp evaluate_recepit({:ok, receipt}, contract_info) do
       events = contract_info[:events]
       logs = receipt["logs"]
 
@@ -1023,7 +1032,7 @@ defmodule ExW3 do
           end
         end)
 
-      {:reply, {:ok, {receipt, formatted_logs}}, state}
+      {:ok, {receipt, formatted_logs}}
     end
   end
 end
