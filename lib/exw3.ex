@@ -359,19 +359,22 @@ defmodule ExW3 do
   @spec decode_output(%{}, binary(), binary()) :: []
   @doc "Decodes output based on specified functions return signature"
   def decode_output(abi, name, output) do
-    {:ok, trim_output} =
-      String.slice(output, 2..String.length(output)) |> Base.decode16(case: :lower)
+    output
+    |> String.slice(2..String.length(output))
+    |> Base.decode16!(case: :lower)
+    |> do_decode_output(abi, name)
+  end
 
+  defp do_decode_output("", _abi, _name), do: [""]
+
+  defp do_decode_output(trim_output, abi, name) do
     output_types = Enum.map(abi[name]["outputs"], fn x -> x["type"] end)
     types_signature = Enum.join(["(", Enum.join(output_types, ","), ")"])
     output_signature = "#{name}(#{types_signature})"
 
-    outputs =
-      ABI.decode(output_signature, trim_output)
-      |> List.first()
-      |> Tuple.to_list()
-
-    outputs
+    ABI.decode(output_signature, trim_output)
+    |> List.first()
+    |> Tuple.to_list()
   end
 
   @spec types_signature(%{}, binary()) :: binary()
@@ -692,8 +695,11 @@ defmodule ExW3 do
         ])
 
       case result do
-        {:ok, data} -> ([:ok] ++ ExW3.decode_output(abi, method_name, data)) |> List.to_tuple()
-        {:error, err} -> {:error, err}
+        {:ok, data} ->
+          ([:ok] ++ ExW3.decode_output(abi, method_name, data)) |> List.to_tuple()
+
+        {:error, err} ->
+          {:error, err}
       end
     end
 
